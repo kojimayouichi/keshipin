@@ -1159,33 +1159,26 @@ function draw() {
   ctx.setLineDash([]);
   ctx.restore();
 
-  // 軌跡描画（強化版：グラデーション＋輝き）
+  // 軌跡描画（軽量版）
   state.trails.forEach(t => {
     const progress = t.age / t.maxAge;
     const alpha = (1 - progress) * (progress < 0.2 ? progress/0.2 : 1) * (t.bright ? 0.65 : 0.38);
     ctx.save();
     ctx.globalAlpha = alpha;
-    if (t.bright) {
-      // 高速時：輝く軌跡
-      ctx.filter = 'blur(2px)';
+    if (t.bright && !isMobile) {
+      // PC：高速時は放射グラデーション
       const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, t.r * 0.7);
       grad.addColorStop(0, '#ffffff');
       grad.addColorStop(0.3, t.color);
       grad.addColorStop(1, 'rgba(240,236,228,0)');
       ctx.fillStyle = grad;
-      ctx.shadowColor = t.color;
-      ctx.shadowBlur = 8;
     } else {
-      ctx.filter = 'blur(3px)';
-      const grad = ctx.createRadialGradient(t.x, t.y, 0, t.x, t.y, t.r);
-      grad.addColorStop(0, t.color);
-      grad.addColorStop(1, 'rgba(240,236,228,0)');
-      ctx.fillStyle = grad;
+      // モバイル or 通常：シンプルな円
+      ctx.fillStyle = t.color;
     }
     ctx.beginPath();
     ctx.arc(t.x, t.y, t.r, 0, Math.PI * 2);
     ctx.fill();
-    ctx.filter = 'none';
     ctx.restore();
   });
 
@@ -1424,10 +1417,9 @@ function draw() {
     // 現在のターンの消しゴムを光らせる
     if (e.owner === state.turn && state.phase === 'aim') {
       const glow = 0.5 + 0.5 * Math.sin(Date.now() / 200);
-      ctx.shadowColor = e.color;
-      ctx.shadowBlur = 10 + glow * 14;
       ctx.strokeStyle = `rgba(255,255,255,${0.5 + glow * 0.5})`;
       ctx.lineWidth = 2;
+      if (!isMobile) { ctx.shadowColor = e.color; ctx.shadowBlur = 10 + glow * 14; }
       ctx.strokeRect(-e.w/2, -e.h/2, e.w, e.h);
       ctx.shadowBlur = 0;
     }
@@ -1435,10 +1427,9 @@ function draw() {
     // ミラー発動中：キラキラ枠
     if (state.mirrorActive[e.owner]) {
       const mg = 0.5 + 0.5 * Math.sin(Date.now() / 100);
-      ctx.shadowColor = '#00BCD4';
-      ctx.shadowBlur = 15 + mg * 10;
       ctx.strokeStyle = `rgba(0,188,212,${0.7 + mg * 0.3})`;
       ctx.lineWidth = 3;
+      if (!isMobile) { ctx.shadowColor = '#00BCD4'; ctx.shadowBlur = 15 + mg * 10; }
       ctx.strokeRect(-e.w/2 - 2, -e.h/2 - 2, e.w + 4, e.h + 4);
       ctx.shadowBlur = 0;
     }
