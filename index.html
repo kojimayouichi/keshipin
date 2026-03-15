@@ -2886,101 +2886,26 @@ function stopAllBGMNodes() {
   bgmNodes = [];
 }
 
+// 対戦BGM（mp3ファイル使用）
+const bgmAudio = new Audio('sound/bgm.mp3');
+bgmAudio.loop = true;
+
 function startBGM() {
   if (bgmPlaying) return;
   bgmPlaying = true;
-  const ctx = getAudioCtx();
-  if (ctx.state === 'suspended') ctx.resume();
-
-  const pat = BGM_PATTERNS[state.stagePattern] || BGM_PATTERNS[0];
-  const BEAT = 60 / pat.bpm;
-  const loopLen = BEAT * pat.bars;
-  let loopStart = ctx.currentTime + 0.1;
-
-  function scheduleLoop(startAt) {
-    if (!bgmPlaying) return;
-    // フェードイン/アウトで繋ぎ目を滑らかに
-    pat.melody.forEach(([freq, beat, dur]) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(getBGMGain());
-      osc.type = pat.melType;
-      osc.frequency.setValueAtTime(freq, startAt + beat*BEAT);
-      gain.gain.setValueAtTime(0.001, startAt + beat*BEAT);
-      gain.gain.linearRampToValueAtTime(pat.melVol, startAt + beat*BEAT + 0.05);
-      gain.gain.setValueAtTime(pat.melVol, startAt + beat*BEAT + dur*BEAT - 0.08);
-      gain.gain.linearRampToValueAtTime(0.001, startAt + beat*BEAT + dur*BEAT);
-      osc.start(startAt + beat*BEAT);
-      osc.stop(startAt + beat*BEAT + dur*BEAT + 0.05);
-      bgmNodes.push(osc);
-    });
-    pat.bass.forEach(([freq, beat, dur]) => {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain); gain.connect(getBGMGain());
-      osc.type = pat.bassType;
-      osc.frequency.setValueAtTime(freq, startAt + beat*BEAT);
-      gain.gain.setValueAtTime(0.001, startAt + beat*BEAT);
-      gain.gain.linearRampToValueAtTime(pat.bassVol, startAt + beat*BEAT + 0.08);
-      gain.gain.setValueAtTime(pat.bassVol, startAt + beat*BEAT + dur*BEAT - 0.1);
-      gain.gain.linearRampToValueAtTime(0.001, startAt + beat*BEAT + dur*BEAT);
-      osc.start(startAt + beat*BEAT);
-      osc.stop(startAt + beat*BEAT + dur*BEAT + 0.05);
-      bgmNodes.push(osc);
-    });
-    // upper（上声部）があれば追加
-    if (pat.upper) {
-      pat.upper.forEach(([freq, beat, dur]) => {
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
-        osc.connect(gain); gain.connect(getBGMGain());
-        osc.type = pat.upperType || 'sine';
-        osc.frequency.setValueAtTime(freq, startAt + beat*BEAT);
-        gain.gain.setValueAtTime(0.001, startAt + beat*BEAT);
-        gain.gain.linearRampToValueAtTime(pat.upperVol, startAt + beat*BEAT + 0.3);
-        gain.gain.setValueAtTime(pat.upperVol, startAt + beat*BEAT + dur*BEAT - 0.3);
-        gain.gain.linearRampToValueAtTime(0.001, startAt + beat*BEAT + dur*BEAT);
-        osc.start(startAt + beat*BEAT);
-        osc.stop(startAt + beat*BEAT + dur*BEAT + 0.1);
-        bgmNodes.push(osc);
-      });
-    }
-    if (pat.drum) {
-      for (let i = 0; i < pat.bars; i++) {
-        const bt = startAt + i * BEAT;
-        const osc = ctx.createOscillator();
-        const ng = ctx.createGain();
-        osc.connect(ng); ng.connect(getBGMGain());
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(i%2===0 ? pat.drumFreqs[0] : pat.drumFreqs[1], bt);
-        ng.gain.setValueAtTime(i%2===0 ? 0.06 : 0.03, bt);
-        ng.gain.exponentialRampToValueAtTime(0.001, bt+0.05);
-        osc.start(bt); osc.stop(bt+0.06);
-        bgmNodes.push(osc);
-      }
-    }
-  }
-
-  scheduleLoop(loopStart);
-  bgmInterval = setInterval(() => {
-    if (!bgmPlaying) { clearInterval(bgmInterval); return; }
-    loopStart += loopLen;
-    scheduleLoop(loopStart);
-  }, loopLen * 1000 - 100);
+  bgmAudio.volume = document.getElementById('bgm-vol').value / 100;
+  bgmAudio.play().catch(() => {});
 }
 
 function stopBGM() {
   bgmPlaying = false;
-  if (bgmInterval) { clearInterval(bgmInterval); bgmInterval = null; }
-  stopAllBGMNodes();
+  bgmAudio.pause();
+  bgmAudio.currentTime = 0;
 }
 
-// ステージ変更時にBGMを切り替え
+// ステージ変更時（mp3は共通なのでそのまま継続）
 function switchBGM() {
-  stopBGM();
-  setTimeout(() => {
-    if (!muted) startBGM();
-  }, 50);
+  if (!bgmPlaying && !muted) startBGM();
 }
 
 // ミュートボタン
@@ -2988,7 +2913,7 @@ let muted = false;
 function setBGMVolume(val) {
   const v = val / 100;
   document.getElementById('bgm-vol-label').textContent = val + '%';
-  if (bgmGain) bgmGain.gain.setValueAtTime(v, getAudioCtx().currentTime);
+  bgmAudio.volume = v;
 }
 function setSFXVolume(val) {
   const v = val / 100;
