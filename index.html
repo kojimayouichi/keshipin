@@ -1798,7 +1798,9 @@ function cpuShoot() {
     const optimalPower = Math.min(20, Math.max(10, foeDist * 0.085));
     power = (optimalPower + (Math.random() - 0.5) * 1.5) * powerMult;
     const foeEdgeDist2 = Math.min(foeEr.x - MARGIN, W-MARGIN - foeEr.x, foeEr.y - MARGIN, H-MARGIN - foeEr.y);
-    if (foeEdgeDist2 < 70 && !isSpace) {
+    const myEdgeDist2  = Math.min(myEr.x - MARGIN, W-MARGIN - myEr.x, myEr.y - MARGIN, H-MARGIN - myEr.y);
+    // 相手が端に近くても自分も端に近いときは強打しない（反動で自分が落ちる防止）
+    if (foeEdgeDist2 < 70 && myEdgeDist2 > 80 && !isSpace) {
       power = (18 + Math.random() * 4) * powerMult;
     }
 
@@ -1842,7 +1844,7 @@ function cpuShoot() {
 
 function cpuCalcBestAngle(myEr, foeEr) {
   // 自分が端に近い場合の安全マージン
-  const safeZone = 60;
+  const safeZone = 90;
   const myEdgeDist = Math.min(myEr.x - MARGIN, W-MARGIN - myEr.x, myEr.y - MARGIN, H-MARGIN - myEr.y);
 
   // 自分が端に危険なほど近い場合 → まず中央方向へ逃げる成分を入れる
@@ -1882,8 +1884,8 @@ function cpuCalcBestAngle(myEr, foeEr) {
   }
 
   // 最終安全チェック：打った角度が自分を端に向けていないか確認
-  const predictX = myEr.x + Math.cos(baseAngle) * 120;
-  const predictY = myEr.y + Math.sin(baseAngle) * 120;
+  const predictX = myEr.x + Math.cos(baseAngle) * 180;
+  const predictY = myEr.y + Math.sin(baseAngle) * 180;
   if (predictX < MARGIN+20 || predictX > W-MARGIN-20 || predictY < MARGIN+20 || predictY > H-MARGIN-20) {
     // 危険な角度 → 相手への直線方向のみに戻す
     return toFoeAngle;
