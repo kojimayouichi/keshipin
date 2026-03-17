@@ -968,11 +968,7 @@ const MARGIN = 18; // 落下ゾーン境界
 const isMobile = ('ontouchstart' in window || navigator.maxTouchPoints > 0);
 
 function applyTurnRotation(turn) {
-  if (!isMobile) return;
-  const wrapper = document.getElementById('wrapper');
-  const deg = turn === 1 ? 180 : 0;
-  wrapper.style.transform = `rotate(${deg}deg)`;
-  wrapper.style.transformOrigin = 'center center';
+  // 回転なし
 }
 
 // ゲーム状態
