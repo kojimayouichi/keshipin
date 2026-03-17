@@ -2495,11 +2495,7 @@ function getPos(e) {
   }
   let x = (cx - rect.left) * (W / rect.width);
   let y = (cy - rect.top)  * (H / rect.height);
-  // P2ターン時に画面が180度回転している場合は座標を反転
-  if (isMobile && state.turn === 1) {
-    x = W - x;
-    y = H - y;
-  }
+
   return { x, y };
 }
 
